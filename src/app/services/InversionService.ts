@@ -1,27 +1,28 @@
 import { Inversion } from "@/types/Inversion";
 
-const API_URL = "http://localhost:8080/api/inversiones";
+const API_URL = "http://localhost:8080/api/v1/inversiones";
 
 export const InversionService = {
   
   obtenerPorUsuario: async (idUsuario: number): Promise<Inversion[]> => {
     try {
       const response = await fetch(`${API_URL}/usuario/${idUsuario}`);
-      if (!response.ok) throw new Error("Error al obtener inversiones");
+      if (!response.ok) throw new Error(`Error en el servidor: Status ${response.status}`);
       return await response.json();
     } catch (error) {
-      console.error("Error en service obtenerPorUsuario:", error);
-      return [];
+      console.error("[QA_ERROR] Error en InversionService.obtenerPorUsuario:", error);
+      throw error; 
     }
   },
 
   obtenerTotal: async (idUsuario: number): Promise<number> => {
     try {
-      const response = await fetch(`${API_URL}/total/${idUsuario}`);
-      if (!response.ok) throw new Error("Error al obtener el total");
+      
+      const response = await fetch(`${API_URL}/usuario/${idUsuario}/total`);
+      if (!response.ok) throw new Error(`Error en el servidor: Status ${response.status}`);
       return await response.json();
     } catch (error) {
-      console.error("Error en service obtenerTotal:", error);
+      console.error("[QA_ERROR] Error en InversionService.obtenerTotal:", error);
       return 0;
     }
   },
@@ -35,16 +36,11 @@ export const InversionService = {
         },
         body: JSON.stringify(nuevaInversion),
       });
-      if (!response.ok) throw new Error("Error al crear inversión");
+      if (!response.ok) throw new Error(`Error en la persistencia: Status ${response.status}`);
       return await response.json();
     } catch (error) {
-      console.error("Error en service crearInversion:", error);
+      console.error("[QA_ERROR] Error en InversionService.crearInversion:", error);
       return null;
     }
-  },
-
-  verificarStatus: async (): Promise<string> => {
-    const response = await fetch(`${API_URL}/status`);
-    return await response.text();
   }
 };
