@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend-app:
+    build:
+      context: .   # Al estar en la raíz del front, busca el Dockerfile aquí mismo
+      dockerfile: Dockerfile
+    container_name: fitproject-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1  # Apunta al puerto expuesto del Back
+    networks:
+      - fitproject-network
+
+networks:
+  fitproject-network:
+    driver: bridge
