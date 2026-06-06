@@ -1,16 +1,12 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { InversionService } from "./services/InversionService";
-import { ContenedorService } from "./services/ContenedorService";
-import { Inversion } from "@/types/Inversion";
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { ContenedorService, IndicadoresService } from "./services/ContenedorService";
 import { Contenedor } from "@/types/Contenedor";
 
 export default function InversionistaPage() {
-  const [total, setTotal] = useState<number>(0);
-  const [movimientos, setMovimientos] = useState<Inversion[]>([]);
   const [contenedores, setContenedores] = useState<Contenedor[]>([]);
+  const [indicadores, setIndicadores] = useState({ totalInvertido: 0, progresoGlobal: 0 });
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   const usuarioActivo = {
     nombre: "Carlos Mendoza",
@@ -18,23 +14,23 @@ export default function InversionistaPage() {
     role: "INVERSIONISTA"
   };
 
+  const estadisticas = useMemo(() => {
+    const totalPresupuesto = contenedores.reduce((acc, c) => acc + (c.presupuestoAsignado || 0), 0);
+    return { totalPresupuesto };
+  }, [contenedores]);
+
   const cargarDatosPanel = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [montoTotal, listaMovimientos, listaContenedores] = await Promise.all([
-        InversionService.obtenerTotal(1), 
-        InversionService.obtenerPorUsuario(1),
+      const [indicadoresData, listaContenedores] = await Promise.all([
+        IndicadoresService.obtenerIndicadores(),
         ContenedorService.obtenerTodos()
       ]);
-
-      setTotal(montoTotal);
-      setMovimientos(listaMovimientos);
+      
+      setIndicadores(indicadoresData);
       setContenedores(listaContenedores);
     } catch (err) {
-      setError("Inconsistencia en la conexión de red. No se pudo comunicar con la API de FitProject.");
-      console.error("[UI_ERROR] Falló el renderizado dinámico del panel:", err);
+      console.error("Error al cargar datos:", err);
     } finally {
       setLoading(false);
     }
@@ -54,61 +50,40 @@ export default function InversionistaPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-8">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Bienvenido, {usuarioActivo.nombre}
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">Perfil: {usuarioActivo.role} ({usuarioActivo.email})</p>
-        </div>
+      <header className="mb-8">
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Bienvenido, {usuarioActivo.nombre}</h1>
+        <p className="text-sm text-gray-600">Perfil: {usuarioActivo.role}</p>
       </header>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-          {error}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs font-bold text-gray-400 uppercase">Total Invertido</p>
+          <p className="text-2xl font-black text-gray-900 mt-1">${indicadores.totalInvertido.toLocaleString('es-CL')}</p>
         </div>
-      )}
-
-      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-sm">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Invertido</p>
-        <p className="text-2xl font-black text-gray-900 mt-1">${total?.toLocaleString('es-CL')}</p>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs font-bold text-gray-400 uppercase">Presupuesto en Obras</p>
+          <p className="text-2xl font-black text-blue-900 mt-1">${estadisticas.totalPresupuesto.toLocaleString('es-CL')}</p>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <p className="text-xs font-bold text-gray-400 uppercase">Progreso Global Portafolio</p>
+          <p className="text-2xl font-black text-blue-600 mt-1">{indicadores.progresoGlobal.toFixed(1)}%</p>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Estado de Unidades Modulares Asociadas</h3>
-        
-        {contenedores.length === 0 ? (
-          <p className="text-gray-400 text-sm">No se encontraron unidades modulares activas asociadas.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {contenedores.map(c => (
-              <div key={c.idContenedor} className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex flex-col justify-between">
-                <div>
-                  <p className="font-bold text-gray-700">📦 Contenedor: {c.nombreModelo}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Presupuesto Asignado: ${c.presupuestoAsignado?.toLocaleString('es-CL') || '0'}
-                  </p>
-                  
-                  {c.descripcion && (
-                    <p className="text-xs text-gray-400 mt-2 italic line-clamp-2">{c.descripcion}</p>
-                  )}
-                </div>
-
-                <div className="mt-4">
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
-                      style={{ width: `${c.progresoFisico || 0}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-right text-xs font-semibold text-blue-600 mt-1">
-                    {c.progresoFisico || 0}% Completado
-                  </p>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Estado de Unidades Modulares</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {contenedores.map(c => (
+            <div key={c.idContenedor} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="font-bold text-gray-700">📦 Contenedor: {c.nombreModelo}</p>
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${c.progreso || 0}%` }} />
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

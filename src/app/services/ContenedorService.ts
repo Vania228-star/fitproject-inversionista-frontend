@@ -14,3 +14,16 @@ export const ContenedorService = {
     }
   }
 };
+
+export const IndicadoresService = {
+  obtenerIndicadores: async (): Promise<{ totalInvertido: number, progresoGlobal: number }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/indicadores`);
+      if (!response.ok) return { totalInvertido: 0, progresoGlobal: 0 };
+      return await response.json();
+    } catch (error) {
+      console.error("[QA_ERROR] Falló IndicadoresService.obtenerIndicadores:", error);
+      return { totalInvertido: 0, progresoGlobal: 0 };
+    }
+  }
+};

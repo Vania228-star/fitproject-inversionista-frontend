@@ -3,7 +3,7 @@ export interface Contenedor {
   nombreModelo: string;
   presupuestoAsignado: number;
   descripcion?: string;
-  progresoFisico?: number;
+  progreso?: number;
   nombreSupervisor?: string;
   fechaLimite?: string;
   imagenDisenoUrl?: string;
