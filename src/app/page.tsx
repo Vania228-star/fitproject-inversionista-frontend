@@ -44,6 +44,14 @@ export default function InversionistaPage() {
     cargarDatosPanel();
   }, [cargarDatosPanel]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 font-medium">Cargando datos del ecosistema modular...</p>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-8">
       <header className="mb-8 flex justify-between items-center">
@@ -55,20 +63,52 @@ export default function InversionistaPage() {
         </div>
       </header>
 
-      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Estado de Unidades Modulares Asociadas</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {contenedores.map(c => (
-            <div key={c.idContenedor} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="font-bold text-gray-700">📦 Contenedor: {c.nombre}</p>
-              <p className="text-sm text-gray-500">Presupuesto Asignado: ${c.presupuesto.toLocaleString('es-CL')}</p>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${c.progresoFisico}%` }}></div>
-              </div>
-              <p className="text-right text-xs font-semibold text-blue-600 mt-1">{c.progresoFisico}% Completado</p>
-            </div>
-          ))}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
         </div>
+      )}
+
+      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-sm">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Invertido</p>
+        <p className="text-2xl font-black text-gray-900 mt-1">${total?.toLocaleString('es-CL')}</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Estado de Unidades Modulares Asociadas</h3>
+        
+        {contenedores.length === 0 ? (
+          <p className="text-gray-400 text-sm">No se encontraron unidades modulares activas asociadas.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {contenedores.map(c => (
+              <div key={c.idContenedor} className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex flex-col justify-between">
+                <div>
+                  <p className="font-bold text-gray-700">📦 Contenedor: {c.nombreModelo}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Presupuesto Asignado: ${c.presupuestoAsignado?.toLocaleString('es-CL') || '0'}
+                  </p>
+                  
+                  {c.descripcion && (
+                    <p className="text-xs text-gray-400 mt-2 italic line-clamp-2">{c.descripcion}</p>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                      style={{ width: `${c.progresoFisico || 0}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-right text-xs font-semibold text-blue-600 mt-1">
+                    {c.progresoFisico || 0}% Completado
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

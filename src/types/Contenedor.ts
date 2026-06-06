@@ -1,6 +1,10 @@
 export interface Contenedor {
-    idContenedor: string;
-    nombre: string;
-    presupuesto: number;
-    progresoFisico: number;
+  idContenedor: string;
+  nombreModelo: string;
+  presupuestoAsignado: number;
+  descripcion?: string;
+  progresoFisico?: number;
+  nombreSupervisor?: string;
+  fechaLimite?: string;
+  imagenDisenoUrl?: string;
 }
